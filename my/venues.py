@@ -318,6 +318,27 @@ class BitMEX(Venue):
 		return order
 
 
+class Woo(Venue):
+	NAME = 'Woo'
+	SRC = 'woo'
+	FUTURES_URL = 'https://api.woo.org/v1/public/futures'
+
+	def __init__(self, trading, is_signal=False):
+		self.trading = trading
+		self.is_signal = is_signal
+		super().__init__([], self.NAME)
+
+	def mark_price(self, symbol):
+		"""Mark price for a WOO X perpetual, such as PERP_BTC_USDT."""
+		if not isinstance(symbol, str) or not symbol.startswith('PERP_'):
+			raise ValueError(f"{symbol} is not a WOO X perpetual contract")
+		response = requests.get(f"{self.FUTURES_URL}/{symbol}", timeout=10)
+		response.raise_for_status()
+		info = response.json().get('info') or {}
+		if info.get('symbol') != symbol or info.get('mark_price') is None:
+			raise ValueError(f"WOO X did not return a mark price for {symbol}")
+		return float(info['mark_price'])
+
 class OANDA(Venue):
 	NAME = 'OANDA'
 	INSTRUMENTS_ENDPOINT = 'v3/accounts/{account_id}/instruments'
